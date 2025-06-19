@@ -1,4 +1,4 @@
-import google.generativeai as genai
+import google.genai as genai
 import os
 from typing import Dict, Any
 from dotenv import load_dotenv
@@ -16,8 +16,8 @@ class GeminiService:
         if not api_key:
             raise ValueError("GEMINI_API_KEY環境変数が設定されていません")
         
-        genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel('gemini-2.0-flash-exp')
+        self.client = genai.Client(api_key=api_key)
+        self.model_name = 'gemini-2.0-flash-exp'
 
     async def generate_paper_summary(self, pdf_file: UploadFile) -> Dict[str, Any]:
         """PDFファイルから各項目の要約を生成"""
@@ -26,22 +26,34 @@ class GeminiService:
             content = await pdf_file.read()
             await pdf_file.seek(0)  # ポインタを先頭に戻す
             
-            # PDFファイルをアップロード
-            uploaded_file = genai.upload_file(
-                path=None,
-                mime_type='application/pdf',
-                display_name=pdf_file.filename,
-                data=content
-            )
+            # 一時ファイルとして保存してアップロード
+            import tempfile
+            import os
             
-            prompt = self._create_summarization_prompt()
+            with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as temp_file:
+                temp_file.write(content)
+                temp_file_path = temp_file.name
             
-            response = self.model.generate_content([uploaded_file, prompt])
-            
-            # ファイルを削除（Geminiサーバーから）
-            genai.delete_file(uploaded_file.name)
-            
-            return self._parse_summary_response(response.text)
+            try:
+                # PDFファイルをアップロード
+                uploaded_file = self.client.files.upload(file=temp_file_path)
+                
+                prompt = self._create_summarization_prompt()
+                
+                response = self.client.models.generate_content(
+                    model=self.model_name,
+                    contents=[prompt, uploaded_file]
+                )
+                
+                # ファイルを削除（Geminiサーバーから）
+                self.client.files.delete(name=uploaded_file.name)
+                
+                return self._parse_summary_response(response.text)
+            finally:
+                # 一時ファイルを削除
+                if os.path.exists(temp_file_path):
+                    os.unlink(temp_file_path)
+                    
         except Exception as e:
             raise Exception(f"Gemini API要約生成エラー: {str(e)}")
 
@@ -51,7 +63,12 @@ class GeminiService:
             # 要約データを使用して質問に回答
             context = self._create_paper_context(paper)
             prompt = self._create_qa_prompt(context, question)
-            response = self.model.generate_content(prompt)
+            
+            response = self.client.models.generate_content(
+                model=self.model_name,
+                contents=[prompt]
+            )
+            
             return response.text.strip()
                 
         except Exception as e:

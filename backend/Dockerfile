@@ -14,11 +14,11 @@ RUN apt-get update && apt-get install -y \
 
 # uvのインストール
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
-ENV PATH="/root/.cargo/bin:$PATH"
+ENV PATH="/root/.local/bin:${PATH}"
 
 # Pythonの依存関係をコピーしてインストール
 COPY requirements.txt .
-RUN uv pip install --system --no-cache -r requirements.txt
+RUN uv pip install --system -r requirements.txt
 
 # アプリケーションコードをコピー
 COPY . .
