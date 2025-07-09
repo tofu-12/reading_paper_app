@@ -1,24 +1,6 @@
 version: '3.8'
 
 services:
-  # PostgreSQLデータベース
-  postgres_database:
-    image: postgres:15-alpine
-    container_name: paper_summary_database
-    environment:
-      POSTGRES_DB: paper_summary_db
-      POSTGRES_USER: paper_user
-      POSTGRES_PASSWORD: paper_secure_password
-      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --locale=C"
-    volumes:
-      - postgres_volume:/var/lib/postgresql/data
-      - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
-    ports:
-      - "5432:5432"
-    networks:
-      - paper_summary_network
-    restart: unless-stopped
-
   # Pythonバックエンド
   python_backend:
     build:
@@ -26,14 +8,11 @@ services:
       dockerfile: Dockerfile
     container_name: paper_summary_backend
     environment:
-      DATABASE_URL: postgresql://paper_user:paper_secure_password@postgres_database:5432/paper_summary_db
       GEMINI_API_KEY: ${GEMINI_API_KEY}
     volumes:
       - ./backend:/app
     ports:
       - "8000:8000"
-    depends_on:
-      - postgres_database
     networks:
       - paper_summary_network
     restart: unless-stopped
@@ -58,9 +37,6 @@ services:
       - paper_summary_network
     restart: unless-stopped
 
-volumes:
-  postgres_volume:
-    driver: local
 
 networks:
   paper_summary_network:

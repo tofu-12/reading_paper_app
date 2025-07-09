@@ -6,7 +6,8 @@ from typing import List, Optional
 import os
 from dotenv import load_dotenv
 
-from database.connection import get_database_session
+from database.connection import get_database_session, engine
+from models.database_models import Base
 from services.pdf_processor import PDFProcessor
 from services.gemini_service import GeminiService
 from services.search_service import SearchService
@@ -20,6 +21,9 @@ from models.api_models import (
 )
 
 load_dotenv()
+
+# データベース初期化
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="論文要約・検索API",

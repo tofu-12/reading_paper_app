@@ -12,7 +12,7 @@ Gemini APIを使用して論文のPDFファイルを自動要約し、効率的�
 
 - **フロントエンド**: React.js 18.2.0, Styled Components, React Query
 - **バックエンド**: Python 3.11, FastAPI 0.104.1, SQLAlchemy 2.0.23
-- **データベース**: PostgreSQL 15
+- **データベース**: SQLite (SQLAlchemy ORM)
 - **AI**: Google Gemini 2.0-Flash API
 - **パッケージ管理**: uv (Python), npm (Node.js)
 - **インフラ**: Docker, Docker Compose 3.8
@@ -104,7 +104,7 @@ npm start
 
 ### データベース
 
-PostgreSQLを使用。スキーマは`database/schema.sql`に定義されています。
+SQLiteを使用。スキーマはSQLAlchemy ORMで定義され、アプリケーション起動時に自動作成されます。
 
 ## API仕様
 
@@ -130,7 +130,6 @@ PostgreSQLを使用。スキーマは`database/schema.sql`に定義されてい�
 │   │   ├── components/  # Reactコンポーネント
 │   │   ├── services/    # API呼び出し
 │   │   └── types/       # 型定義
-├── database/            # データベーススキーマ
 ├── docker-compose.yml   # Docker構成
 └── README.md
 ```
